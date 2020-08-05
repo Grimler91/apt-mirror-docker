@@ -3,9 +3,9 @@ set mirror_path       $base_path/mirror
 set skel_path         $base_path/skel
 set var_path          $base_path/var
 set postmirror_script $var_path/postmirror.sh
-set defaultarch       amd64
+set defaultarch       aarch64
 set run_postmirror    0
-set nthreads          20
+set nthreads          1
 set limit_rate        100m
 set _tilde            0
 # Use --unlink with wget (for use with hardlinked directories)
@@ -15,9 +15,6 @@ set http_proxy        127.0.0.1:3128
 set proxy_user        user
 set proxy_password    password
 
-deb http://archive.ubuntu.com/ubuntu bionic main restricted universe multiverse
-deb http://archive.ubuntu.com/ubuntu bionic-security main restricted universe multiverse
-deb http://archive.ubuntu.com/ubuntu bionic-updates main restricted universe multiverse
-deb http://archive.ubuntu.com/ubuntu bionic-backports main restricted universe multiverse
-
-clean http://archive.ubuntu.com/ubuntu
+deb-termux https://main.termux-mirror.ml stable main
+deb-termux https://mirrors.tuna.tsinghua.edu.cn/termux/game-packages-24/ games stable
+deb-termux https://termux.mentality.rip/termux-root-packages-24 root stable

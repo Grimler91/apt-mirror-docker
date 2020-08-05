@@ -145,6 +145,7 @@ my %config_variables = (
 
 my @config_binaries = ();
 my @config_sources  = ();
+my @config_termux  = ();
 
 my @index_urls;
 my @childrens       = ();
@@ -338,7 +339,7 @@ sub download_urls
 
 sub parse_config_line
 {
-    my $pattern_deb_line = qr/^[\t ]*(?<type>deb-src|deb)(?:-(?<arch>[\w\-]+))?[\t ]+(?:\[(?<options>[^\]]+)\][\t ]+)?(?<uri>[^\s]+)[\t ]+(?<components>.+)$/;
+    my $pattern_deb_line = qr/^[\t ]*(?<type>deb-termux|deb-src|deb)(?:-(?<arch>[\w\-]+))?[\t ]+(?:\[(?<options>[^\]]+)\][\t ]+)?(?<uri>[^\s]+)[\t ]+(?<components>.+)$/;
     my $line = $_;
     my %config;
     if ( $line =~ $pattern_deb_line ) {
@@ -380,6 +381,11 @@ while (<CONFIG>)
         my $arch = $config_line{'arch'};
         $arch = get_variable("defaultarch") if ! defined $config_line{'arch'};
         push @config_binaries, [ $arch, $config_line{'uri'}, @{$config_line{'components'}} ];
+        next;
+    } elsif ( $config_line{'type'} eq "deb-termux" ) {
+        my $arch;
+        $arch = get_variable("defaultarch") if ! defined $config_line{'arch'};
+        push @config_termux, [ $arch, $config_line{'uri'}, @{$config_line{'components'}} ];
         next;
     } elsif ( $config_line{'type'} eq "deb-src" ) {
         push @config_sources, [ $config_line{'uri'}, @{$config_line{'components'}} ];
@@ -512,6 +518,34 @@ foreach (@config_binaries)
         add_url_to_download( $uri . "/$distribution/Packages.gz" );
         add_url_to_download( $uri . "/$distribution/Packages.bz2" );
         add_url_to_download( $uri . "/$distribution/Packages.xz" );
+    }
+}
+
+foreach (@config_termux)
+{
+    my ( $arch, $uri, $distribution, @components ) = @{$_};
+
+    if (@components)
+    {
+        $url = $uri . "/dists/" . $distribution . "/";
+
+        add_url_to_download( $url . "Release" );
+        add_url_to_download( $url . "Release.gpg" );
+
+        foreach (@components)
+        {
+            add_url_to_download( $url . $_ . "/binary-" . $arch . "/Packages" );
+            add_url_to_download( $url . $_ . "/binary-" . $arch . "/Packages.gz" );
+            add_url_to_download( $url . $_ . "/binary-" . $arch . "/Packages.bz2" );
+        }
+    }
+    else
+    {
+        add_url_to_download( $uri . "/$distribution/Release" );
+        add_url_to_download( $uri . "/$distribution/Release.gpg" );
+        add_url_to_download( $uri . "/$distribution/Packages" );
+        add_url_to_download( $uri . "/$distribution/Packages.gz" );
+        add_url_to_download( $uri . "/$distribution/Packages.bz2" );
     }
 }
 
@@ -1024,6 +1058,24 @@ foreach (@config_sources)
 }
 
 foreach (@config_binaries)
+{
+    my ( $arch, $uri, $distribution, @components ) = @{$_};
+    print "P" if $progress;
+    if (@components)
+    {
+        my $component;
+        foreach $component (@components)
+        {
+            process_index( $uri, "/dists/$distribution/$component/binary-$arch/Packages" );
+        }
+    }
+    else
+    {
+        process_index( $uri, "/$distribution/Packages" );
+    }
+}
+
+foreach (@config_termux)
 {
     my ( $arch, $uri, $distribution, @components ) = @{$_};
     print "P" if $progress;
