@@ -7,6 +7,7 @@ services:
         command: bash -c "apt-mirror && bash /apt-mirror/postmirror.sh"
         volumes:
             - "./mirror:/var/spool/apt-mirror"
+            - "/etc/localtime:/etc/localtime:ro"
 
     server:
         build:
